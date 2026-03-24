@@ -12,6 +12,13 @@ from app.parsers.parse_test_measurment_csv import parse_test_measurement_csv
 from app.utils.validate_file_type import validate_file_type
 from datetime import datetime
 
+from sqlalchemy import extract, func, case
+from app.models.monthly_energy_flow_model import MonthlyPlantEnergyFlowModel
+from app.models.monthly_company_usage_model import MonthlyCompanyUsageModel
+from app.models.monthly_plant_loss_ratios import MonthlyPlantLossRatiosModel
+
+
+
 '''
 Services already in place
 '''
@@ -168,11 +175,173 @@ async def insert_test_measurement_data(
 '''
 Service 1: get_monthly_energy_flow_data()
 '''
+def get_monthly_energy_flow_data(
+    from_date: datetime,
+    to_date: datetime,
+    db: Session
+):
+    rows = (
+        db.query(
+            OrkuMaelingar.eining_heiti.label("power_plant_source"),
+            extract("year", OrkuMaelingar.timi).label("year"),
+            extract("month", OrkuMaelingar.timi).label("month"),
+            OrkuMaelingar.tegund_maelingar.label("measurement_type"),
+            func.sum(OrkuMaelingar.gildi_kwh).label("total_kwh")
+        )
+        .filter(
+            OrkuMaelingar.timi >= from_date,
+            OrkuMaelingar.timi <= to_date
+        )
+        .group_by(
+            OrkuMaelingar.eining_heiti,
+            extract("year", OrkuMaelingar.timi),
+            extract("month", OrkuMaelingar.timi),
+            OrkuMaelingar.tegund_maelingar
+        )
+        .order_by(
+            OrkuMaelingar.eining_heiti,
+            extract("year", OrkuMaelingar.timi),
+            extract("month", OrkuMaelingar.timi).asc(),
+            func.sum(OrkuMaelingar.gildi_kwh).desc()
+        )
+        .all()
+    )
+
+    return [
+        MonthlyPlantEnergyFlowModel(
+            power_plant_source=row.power_plant_source,
+            measurement_type=row.measurement_type,
+            year=int(row.year),
+            month=int(row.month),
+            total_kwh=float(row.total_kwh)
+        )
+        for row in rows
+    ]
+
 
 '''
 Service 2: get_monthly_company_usage_data()
 '''
+def get_monthly_company_usage_data(
+    from_date: datetime,
+    to_date: datetime,
+    db: Session
+):
+    rows = (
+        db.query(
+            OrkuMaelingar.eining_heiti.label("power_plant_source"),
+            extract("year", OrkuMaelingar.timi).label("year"),
+            extract("month", OrkuMaelingar.timi).label("month"),
+            OrkuMaelingar.notandi_heiti.label("customer_name"),
+            func.sum(OrkuMaelingar.gildi_kwh).label("total_kwh")
+        )
+        .filter(
+            OrkuMaelingar.timi >= from_date,
+            OrkuMaelingar.timi <= to_date,
+            OrkuMaelingar.tegund_maelingar == "Úttekt"
+        )
+        .group_by(
+            OrkuMaelingar.eining_heiti,
+            extract("year", OrkuMaelingar.timi),
+            extract("month", OrkuMaelingar.timi),
+            OrkuMaelingar.notandi_heiti
+        )
+        .order_by(
+            OrkuMaelingar.eining_heiti,
+            extract("year", OrkuMaelingar.timi),
+            extract("month", OrkuMaelingar.timi).asc(),
+            OrkuMaelingar.notandi_heiti.asc()
+        )
+        .all()
+    )
+
+    return [
+        MonthlyCompanyUsageModel(
+            power_plant_source=row.power_plant_source,
+            customer_name=row.customer_name,
+            year=int(row.year),
+            month=int(row.month),
+            total_kwh=float(row.total_kwh)
+        )
+        for row in rows
+    ]
+
 
 '''
 Service 3: get_monthly_plant_loss_ratios_data()
 '''
+def get_monthly_plant_loss_ratios_data(
+    from_date: datetime,
+    to_date: datetime,
+    db: Session
+):
+    monthly_rows = (
+        db.query(
+            OrkuMaelingar.eining_heiti.label("power_plant_source"),
+            extract("month", OrkuMaelingar.timi).label("month"),
+            func.sum(
+                case(
+                    (OrkuMaelingar.tegund_maelingar == "Framleiðsla", OrkuMaelingar.gildi_kwh),
+                    else_=0
+                )
+            ).label("total_production"),
+            func.sum(
+                case(
+                    (OrkuMaelingar.tegund_maelingar == "Innmötun", OrkuMaelingar.gildi_kwh),
+                    else_=0
+                )
+            ).label("total_import"),
+            func.sum(
+                case(
+                    (OrkuMaelingar.tegund_maelingar == "Úttekt", OrkuMaelingar.gildi_kwh),
+                    else_=0
+                )
+            ).label("total_withdrawal")
+        )
+        .filter(
+            OrkuMaelingar.timi >= from_date,
+            OrkuMaelingar.timi <= to_date
+        )
+        .group_by(
+            OrkuMaelingar.eining_heiti,
+            extract("month", OrkuMaelingar.timi)
+        )
+        .all()
+    )
+
+    grouped = {}
+
+    for row in monthly_rows:
+        production = float(row.total_production or 0)
+        imported = float(row.total_import or 0)
+        withdrawal = float(row.total_withdrawal or 0)
+
+        if production == 0:
+            continue
+
+        plant_to_substation_loss_ratio = (production - imported) / production
+        total_system_loss_ratio = (production - withdrawal) / production
+
+        plant = row.power_plant_source
+
+        if plant not in grouped:
+            grouped[plant] = {
+                "plant_to_substation_loss_ratio": [],
+                "total_system_loss_ratio": []
+            }
+
+        grouped[plant]["plant_to_substation_loss_ratio"].append(plant_to_substation_loss_ratio)
+        grouped[plant]["total_system_loss_ratio"].append(total_system_loss_ratio)
+
+    result = []
+    for plant, values in grouped.items():
+        result.append(
+            MonthlyPlantLossRatiosModel(
+                power_plant_source=plant,
+                plant_to_substation_loss_ratio=sum(values["plant_to_substation_loss_ratio"]) / len(values["plant_to_substation_loss_ratio"]),
+                total_system_loss_ratio=sum(values["total_system_loss_ratio"]) / len(values["total_system_loss_ratio"])
+            )
+        )
+
+    result.sort(key=lambda x: x.power_plant_source)
+    return result
