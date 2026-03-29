@@ -74,3 +74,14 @@ create index idx_measurements_customer_id on raforka.measurements(customer_id);
 
 
 -- Task D1
+CREATE INDEX idx_measurements_timest
+ON raforka.measurements (timest);
+
+CREATE INDEX idx_measurements_power_plant_timest
+ON raforka.measurements (power_plant_id, timest);
+
+CREATE INDEX idx_measurements_measurement_type_timest
+ON raforka.measurements (measurement_type, timest);
+
+CREATE INDEX idx_measurements_customer_timest
+ON raforka.measurements (customer_id, timest);
