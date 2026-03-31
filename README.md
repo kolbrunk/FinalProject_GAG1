@@ -1,10 +1,10 @@
 # FinalProject_GAG1
 
-## Final Project in Database Management Systems 2026, Reykjavík university.
+## Final Project in Database Management Systems 2026, Reykjavík University.
 
 ### **Teacher:** Hildur Davíðsdóttir.
 ### **Group 19**
-### **Students:** Hrafnhildur I. Hallsdóttir, Kolbrún Eggerts Kristínardóttir, Sóldís Rós Ragnarsdóttir.
+### **Students:** Hrafnhildur I. Hallsdóttir, Kolbrún Eggerts Kristínardóttir, Sóldís Rós Ragnarsdóttir, Steinunn Helga Pálsdóttir.
 
 ## **Description:** 
 ### This project was developed for the course Database Management System. The goal was to work with designed database, improve it´s schema and build a backend system using FastAPI.
@@ -45,10 +45,12 @@
 ## How to run
 
 ### Set up the database
-createdb OrkuFlaediIsland psql -d OrkuFlaediIsland -f DDL_DML.sql
+createdb OrkuFlaediIsland 
+psql -d OrkuFlaediIsland -f DDL_DML.sql
 
 ### Run the API
-pip install -r requirements.txt uvicorn app.main:app --reload
+pip install -r requirements.txt 
+uvicorn app.main:app --reload
 
 Swagger UI:
 http://127.0.0.1:8000/docs
