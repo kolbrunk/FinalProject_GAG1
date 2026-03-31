@@ -291,12 +291,12 @@ def get_substations_gridflow_data(from_date: datetime, to_date: datetime, db: Se
     s2_total_input = s1_s2_flow + s2_injection
     s2_s3_flow = s2_total_input
     total_loss = s2_total_input - s3_withdrawal
-    s1_s2_loss = total_loss * (s1_s2_distance / total_distance)
-    s2_s3_loss = total_loss * (s2_s3_distance / total_distance)
+    s1_s2_loss = total_loss * (s1_s2_distance / total_distance) if total_distance != 0 else 0
+    s2_s3_loss = total_loss * (s2_s3_distance / total_distance) if total_distance != 0 else 0
 
     # calculate loss ratios
-    s1_s2_loss_ratio = s1_s2_loss / s1_s2_flow
-    s2_s3_loss_ratio = s2_s3_loss / s2_s3_flow
+    s1_s2_loss_ratio = s1_s2_loss / s1_s2_flow if s1_s2_flow != 0 else 0
+    s2_s3_loss_ratio = s2_s3_loss / s2_s3_flow if s2_s3_flow != 0 else 0
 
     return [
         SubstationGridflowModel(

@@ -4,9 +4,9 @@ import psycopg2
 
 connection = psycopg2.connect(
     host = "localhost",
-    port = "",
-    database = "orkuflaediisland",
-    user = "",
+    port = "5432",
+    database = "UpdatedOrkuFlaediIsland",
+    user = "postgres",
     password = ""
 )
 
