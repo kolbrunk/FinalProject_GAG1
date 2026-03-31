@@ -39,9 +39,9 @@ def get_monthly_energy_flow(
     )
 
     results = get_monthly_energy_flow_data(
-        db,
         from_date,
-        to_date
+        to_date,
+        db
     )
     return results
 
@@ -64,9 +64,9 @@ def get_monthly_company_usage(
     )
 
     results = get_monthly_company_usage_data(
-        db,
         from_date,
-        to_date
+        to_date,
+        db
     )
     return results
 
@@ -89,9 +89,9 @@ def get_monthly_plant_loss_ratios(
     )
 
     results = get_monthly_plant_loss_ratios_data(
-        db,
         from_date,
-        to_date
+        to_date,
+        db
     )
     return results
 
@@ -101,7 +101,10 @@ def get_monthly_plant_loss_ratios(
 Endpoint 4: insert_measurements()
 '''
 @router.post("/measurements-data")
-async def insert_measurements(file: UploadFile = File(...), db: Session = Depends(get_orkuflaedi_session)):
+async def insert_measurements(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_orkuflaedi_session)
+):
     print(f"Calling [POST] /{db_name}/measurements-data")
     validate_file_type(file, allowed_extensions=[".csv"])
     return await insert_measurements_data(file, db)
@@ -112,9 +115,16 @@ async def insert_measurements(file: UploadFile = File(...), db: Session = Depend
 Endpoint 5: get_substations_gridflow()
 '''
 @router.get("/substations-gridflow", response_model=list[SubstationGridflowModel])
-def get_substations_gridflow(from_date: datetime | None = None, to_date: datetime | None = None, db: Session = Depends(get_orkuflaedi_session)):
+def get_substations_gridflow(
+    from_date: datetime | None = None,
+    to_date: datetime | None = None,
+    db: Session = Depends(get_orkuflaedi_session)
+):
     print(f"Calling [GET] /{db_name}/substations-gridflow")
     from_date, to_date = validate_date_range_helper(
-        from_date, to_date, datetime(2025, 1, 1, 0, 0), datetime(2026, 1, 1, 0, 0)
+        from_date,
+        to_date,
+        datetime(2025, 1, 1, 0, 0),
+        datetime(2026, 1, 1, 0, 0)
     )
-    return get_substations_gridflow_data(db, from_date, to_date)
+    return get_substations_gridflow_data(from_date, to_date, db)
