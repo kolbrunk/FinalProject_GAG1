@@ -56,4 +56,8 @@ C1:
         - orku_maelingar -> measurements
         - additional: transmission_lines (P1->S1...)
     - references like measurements.power_plant_id
+
+ER - Diagram 
+<img width="6384" height="2396" alt="image" src="https://github.com/user-attachments/assets/52bb5c8a-5453-43ca-9f98-5160c4c0f0f1" />
+
     
