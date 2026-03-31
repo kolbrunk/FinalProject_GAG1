@@ -4,7 +4,7 @@
 
 ### **Teacher:** Hildur Davíðsdóttir.
 ### **Group 19**
-### **Students:** Hrafnhildur I. Hallsdóttir, Kolbrún Eggerts Kristínardóttir, Sóldís Rós Ragnarsdóttir, Steinunn Helga Pálsdóttir.
+### **Students:** Hrafnhildur I. Hallsdóttir, Kolbrún Eggerts Kristínardóttir, Sóldís Rós Ragnarsdóttir og Steinunn Helga Pálsdóttir.
 
 ## **Description:** 
 ### This project was developed for the course Database Management System. The goal was to work with designed database, improve it´s schema and build a backend system using FastAPI.
