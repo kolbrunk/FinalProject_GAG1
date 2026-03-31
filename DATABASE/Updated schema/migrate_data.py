@@ -7,7 +7,8 @@ connection = psycopg2.connect(
     port = "5432",
     database = "UpdatedOrkuFlaediIsland",
     user = "postgres",
-    password = ""
+    password = "",
+    options='-c client_encoding=UTF8'
 )
 
 current = connection.cursor()
