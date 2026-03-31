@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from app.db.base import Base
 
 class Measurement(Base):
-    __tablename__ = "measruements"
+    __tablename__ = "measurements"
     __table_args__ = {"schema": "raforka"}
 
     id = Column(Integer, primary_key=True, autoincrement=True)

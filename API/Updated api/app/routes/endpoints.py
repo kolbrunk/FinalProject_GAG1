@@ -39,9 +39,9 @@ def get_monthly_energy_flow(
     )
 
     results = get_monthly_energy_flow_data(
-        db,
         from_date,
-        to_date
+        to_date,
+        db
     )
     return results
 
@@ -64,9 +64,9 @@ def get_monthly_company_usage(
     )
 
     results = get_monthly_company_usage_data(
-        db,
         from_date,
-        to_date
+        to_date,
+        db
     )
     return results
 
@@ -89,9 +89,9 @@ def get_monthly_plant_loss_ratios(
     )
 
     results = get_monthly_plant_loss_ratios_data(
-        db,
         from_date,
-        to_date
+        to_date,
+        db
     )
     return results
 
@@ -117,4 +117,4 @@ def get_substations_gridflow(from_date: datetime | None = None, to_date: datetim
     from_date, to_date = validate_date_range_helper(
         from_date, to_date, datetime(2025, 1, 1, 0, 0), datetime(2026, 1, 1, 0, 0)
     )
-    return get_substations_gridflow_data(db, from_date, to_date)
+    return get_substations_gridflow_data(from_date, to_date, db)
