@@ -2,13 +2,13 @@
 
 ## Final Project in Database Management Systems 2026, Reykjavík University.
 
-### **Teacher:** Hildur Davíðsdóttir.
-### **Group 19**
-### **Students:** Hrafnhildur I. Hallsdóttir, Kolbrún Eggerts Kristínardóttir, Sóldís Rós Ragnarsdóttir og Steinunn Helga Pálsdóttir.
+##### **Teacher:** Hildur Davíðsdóttir.
+##### **Group 19**
+##### **Students:** Hrafnhildur I. Hallsdóttir, Kolbrún Eggerts Kristínardóttir, Sóldís Rós Ragnarsdóttir og Steinunn Helga Pálsdóttir.
 
 ## **Description:** 
-### This project was developed for the course Database Management System. The goal was to work with designed database, improve it´s schema and build a backend system using FastAPI.
-### The project is based on a simulated electricity grid where energy is produced at power plats, transfered through substations and consumed in Vestmannaeyjar. 
+##### This project was developed for the course Database Management System. The goal was to work with designed database, improve it´s schema and build a backend system using FastAPI.
+##### The project is based on a simulated electricity grid where energy is produced at power plats, transfered through substations and consumed in Vestmannaeyjar. 
 
 ## Project Structure
 
