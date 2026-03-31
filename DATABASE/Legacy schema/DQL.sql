@@ -39,7 +39,6 @@ order by
     extract(month from timi) asc,
     notandi_heiti asc;
 
-
 -- 3. Monthly energy loss ratio per power plant
 create or replace view monthly_energy_2025 as
 select

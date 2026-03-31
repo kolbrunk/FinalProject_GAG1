@@ -7,11 +7,16 @@ from datetime import date, datetime
 from app.db.tables.measurements import Measurement
 from app.db.tables.power_plants import PowerPlant
 from app.db.tables.customers import Customer
+from app.db.tables.substations import Substation
+from app.db.tables.transmission_lines import TransmissionLine
 
 from app.models.monthly_energy_flow_model import MonthlyPlantEnergyFlowModel
 from app.models.monthly_company_usage_model import MonthlyCompanyUsageModel
 from app.models.monthly_plant_loss_ratios import MonthlyPlantLossRatiosModel
+from app.models.substation_gridflow_model import SubstationGridflowModel
 
+from app.models.parsed_data.measurement_data import MeasurementData
+from app.parsers.parse_measurement_csv import parse_measurement_csv
 
 
 '''
@@ -193,9 +198,123 @@ def get_monthly_plant_loss_ratios_data(
 '''
 Service 4: insert_measurements_data()
 '''
+async def insert_measurements_data(file: UploadFile, db: Session):
+    raw_data = await file.read()
+    raw_text = raw_data.decode()
+
+    parsed_rows: list[MeasurementData] = parse_measurement_csv(raw_text)
+    if not parsed_rows:
+        raise HTTPException(status_code=400, detail="No valid rows found")
+    
+    power_plants = {P.name: P.id for P in db.query(PowerPlant).all()}
+    customers = {C.owner: C.id for C in db.query(Customer).all()}
+
+    try:
+        insert_data = []
+        for row in parsed_rows:
+            power_plant_id = power_plants.get(row.power_plant_name)
+            customer_id = customers.get(row.customer_name) if row.customer_name else None
+            insert_data.append({
+                "power_plant_id": power_plant_id,
+                "measurement_type": row.measurement_type,
+                "sender": row.sender,
+                "timest": row.timestamp,
+                "value_kwh": row.value_kwh,
+                "customer_id": customer_id
+            })
+        
+        db.bulk_insert_mappings(Measurement, insert_data)
+        db.commit()
+
+        return {"status": 200, "rows_processed": len(insert_data)}
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 # Task F1
 
 '''
 Service 5: get_substations_gridflow_data()
 '''
+def get_substations_gridflow_data(from_date: datetime, to_date: datetime, db: Session):
+    # get total injection at S1 (import from P1 and P2)
+    s1_injection = (
+        db.query(func.sum(Measurement.value_kwh))
+        .join(PowerPlant, Measurement.power_plant_id == PowerPlant.id)
+        .filter(
+            Measurement.timest >= from_date,
+            Measurement.timest <= to_date,
+            Measurement.measurement_type == "Import",
+            PowerPlant.name.in_(["P1_Þröstur", "P2_Búrfell"])
+        )
+        .scalar() or 0.0
+    )
+
+    # get total injection at S2 (import from P3)
+    s2_injection = (
+        db.query(func.sum(Measurement.value_kwh))
+        .join(PowerPlant, Measurement.power_plant_id == PowerPlant.id)
+        .filter(
+            Measurement.timest >= from_date,
+            Measurement.timest <= to_date,
+            Measurement.measurement_type == "Import",
+            PowerPlant.name == "P3_Strokkur"
+        )
+        .scalar() or 0.0
+    )
+
+    # get total withdrawal at S3 (all withdrawal)
+    s3_withdrawal = (
+        db.query(func.sum(Measurement.value_kwh))
+        .filter(
+            Measurement.timest >= from_date,
+            Measurement.timest <= to_date,
+            Measurement.measurement_type == "Withdrawal"
+        )
+        .scalar() or 0.0
+    )
+
+    # get transmission lines distances
+    lines = {
+        (line.from_node, line.to_node): line.length_km for line in db.query(TransmissionLine)
+        .filter(TransmissionLine.line_type == "S->S").all()
+    }
+    s1_s2_distance = lines.get(("S1_Krókur", "S2_Rimakot"), 0.0)
+    s2_s3_distance = lines.get(("S2_Rimakot", "S3_Vestmannaeyjar"), 0.0)
+    total_distance = s1_s2_distance + s2_s3_distance
+
+    # get flows and losses
+    s1_s2_flow = s1_injection
+    s2_total_input = s1_s2_flow + s2_injection
+    s2_s3_flow = s2_total_input
+    total_loss = s2_total_input - s3_withdrawal
+    s1_s2_loss = total_loss * (s1_s2_distance / total_distance)
+    s2_s3_loss = total_loss * (s2_s3_distance / total_distance)
+
+    # calculate loss ratios
+    s1_s2_loss_ratio = s1_s2_loss / s1_s2_flow
+    s2_s3_loss_ratio = s2_s3_loss / s2_s3_flow
+
+    return [
+        SubstationGridflowModel(
+            from_substation = "S1_Krókur",
+            to_substation = "S2_Rimakot",
+            distance_km = s1_s2_distance,
+            flow_kwh = s1_s2_flow,
+            loss_kwh = s1_s2_loss,
+            loss_ratio = s1_s2_loss_ratio,
+            max_capacity_mw = None
+        ),
+        SubstationGridflowModel(
+            from_substation = "S2_Rimakot",
+            to_substation = "S3_Vestmannaeyjar",
+            distance_km = s2_s3_distance,
+            flow_kwh = s2_s3_flow,
+            loss_kwh = s2_s3_loss,
+            loss_ratio = s2_s3_loss_ratio,
+            max_capacity_mw = None
+        )
+    ]

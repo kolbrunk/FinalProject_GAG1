@@ -66,11 +66,11 @@ create table raforka.measurements(
     customer_id         integer references raforka.customers(id)
 );
 
+
+-- Task D1
+
 -- Indexes
 create index idx_measurements_timestamp on raforka.measurements(timest);
 create index idx_measurements_plant_id on raforka.measurements(power_plant_id);
 create index idx_measurements_type on raforka.measurements(measurement_type);
 create index idx_measurements_customer_id on raforka.measurements(customer_id);
-
-
--- Task D1
