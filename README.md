@@ -45,11 +45,11 @@
 ## How to run
 
 ### Set up the database
-createdb OrkuFlaediIsland 
+createdb OrkuFlaediIsland \
 psql -d OrkuFlaediIsland -f DDL_DML.sql
 
 ### Run the API
-pip install -r requirements.txt 
+pip install -r requirements.txt \
 uvicorn app.main:app --reload
 
 Swagger UI:
