@@ -86,7 +86,7 @@ def get_monthly_company_usage_data(
         .filter(
             Measurement.timest >= from_date,
             Measurement.timest <= to_date,
-            Measurement.measurement_type == "Úttekt"
+            Measurement.measurement_type == "Withdrawal"
         )
         .group_by(
             PowerPlant.name,
@@ -127,19 +127,19 @@ def get_monthly_plant_loss_ratios_data(
             extract("month", Measurement.timest).label("month"),
             func.sum(
                 case(
-                    (Measurement.measurement_type == "Framleiðsla", Measurement.value_kwh),
+                    (Measurement.measurement_type == "Production", Measurement.value_kwh),
                     else_=0
                 )
             ).label("total_production"),
             func.sum(
                 case(
-                    (Measurement.measurement_type == "Innmötun", Measurement.value_kwh),
+                    (Measurement.measurement_type == "Import", Measurement.value_kwh),
                     else_=0
                 )
             ).label("total_import"),
             func.sum(
                 case(
-                    (Measurement.measurement_type == "Úttekt", Measurement.value_kwh),
+                    (Measurement.measurement_type == "Withdrawal", Measurement.value_kwh),
                     else_=0
                 )
             ).label("total_withdrawal")

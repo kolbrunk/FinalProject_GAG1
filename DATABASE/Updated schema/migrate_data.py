@@ -52,7 +52,14 @@ try:
     # Migrate measurements
     current.execute("""
         insert into raforka.measurements(power_plant_id, measurement_type, sender, timest, value_kwh, customer_id)
-        select P.id, M.tegund_maelingar, M.sendandi_maelingar, M.timi, M.gildi_kwh, C.id
+        select P.id,
+            case M.tegund_maelingar
+                when 'Framleiðsla' then 'Production'
+                when 'Innmötun'    then 'Import'
+                when 'Úttekt'      then 'Withdrawal'
+                else M.tegund_maelingar
+            end,
+            M.sendandi_maelingar, M.timi, M.gildi_kwh, C.id
         from raforka_legacy.orku_maelingar M
         join raforka.power_plants P on P.name = M.eining_heiti
         left join raforka.customers C on C.owner = M.notandi_heiti

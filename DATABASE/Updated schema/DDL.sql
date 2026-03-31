@@ -59,7 +59,7 @@ create table raforka.customers(
 create table raforka.measurements(
     id                  serial primary key,
     power_plant_id      integer not null references raforka.power_plants(id),
-    measurement_type    varchar(50) not null check(measurement_type in ('Framleiðsla', 'Innmötun', 'Úttekt')),
+    measurement_type    varchar(50) not null check(measurement_type in ('Production', 'Import', 'Withdrawal')),
     sender              varchar(50) not null,
     timest              timestamp not null,
     value_kwh           float not null,
